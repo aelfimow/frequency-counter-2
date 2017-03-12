@@ -3,18 +3,17 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
--- Frequenzzähler Ver. 1
 entity cntr_ver1 is
 	port (
-		rst_i: in std_logic; -- Reset
-		time_base_clk_i: in std_logic; -- Zeitbasis
-		x_clk_i: in std_logic; --unbekannte Frequenz
-		ctrl_clk_i: in std_logic; -- Takt für die FSM
-		-- Signale des Bausteins der HDSP-210X, -211X oder -250X Serie
-		disp_a_o: out std_logic_vector(4 downto 0); -- Adressen
-		disp_d_o: out std_logic_vector(7 downto 0); -- Daten
-		disp_nrst_o: out std_logic; -- Reset
-		disp_nwr_o: out std_logic; -- Schreibsignal
+		rst_i: in std_logic; -- reset
+		time_base_clk_i: in std_logic; -- time base
+		x_clk_i: in std_logic; -- clock to be counted
+		ctrl_clk_i: in std_logic; -- clock for FSM
+		-- signals for HDSP-210X, -211X oder -250X
+		disp_a_o: out std_logic_vector(4 downto 0); -- address bits
+		disp_d_o: out std_logic_vector(7 downto 0); -- data bus
+		disp_nrst_o: out std_logic; -- reset
+		disp_nwr_o: out std_logic; -- "write"
 		disp_nce_o: out std_logic -- "chip enable"
 	);
 end entity cntr_ver1;
@@ -45,7 +44,7 @@ begin
 
 	count <= rst_i or time_base_clk_i;
 
-	-- zum Zählen der unbekannten Frequenz
+	-- Count unknown clock
 	count_x_clk_i: process(count, x_clk_i, old_count, digit)
 	begin
 		if (count = '1') then
@@ -70,10 +69,10 @@ begin
 		end if;
 	end process count_x_clk_i;
 
-	-- FSM: Eingabelogik
+	-- FSM: Input logic of the state machine
 	input_ctrl: process(state)
 	begin
-		next_state <= reset_state; -- "default"-Zustand
+		next_state <= reset_state; -- "default"-state
 		case state is
 			when reset_state =>
 				next_state <= wait_state;
@@ -91,7 +90,7 @@ begin
 		end case;
 	end process input_ctrl;
 
-	-- FSM: Zustandsspeicher
+	-- FSM: State register
 	state_ctrl: process(rst_i, ctrl_clk_i, next_state, digit_cntr)
 	begin
 		if (rst_i = '1') then
@@ -105,7 +104,7 @@ begin
 		end if;
 	end process state_ctrl;
 
-	-- FSM: Ausgabelogik
+	-- FSM: Output logic of the state machine
 	output_ctrl: process(state, digit_cntr, digit)
 	begin
 		disp_nrst_o <= '1';
